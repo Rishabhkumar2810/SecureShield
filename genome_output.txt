@@ -1,0 +1,6 @@
+ {
+  "strand": "G2",
+  "score": 0-100,
+  "evidence": ["ACCESSIBILITY_SERVICE + READ_SMS combo detected", "..."],
+  "raw_features": {...}
+}
