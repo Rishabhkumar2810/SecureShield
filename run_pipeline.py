@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from datetime import datetime
 from core_pipeline.decompiler_sage import DecompilerSageA01
 from agents.g1_semantic_agent import G1SemanticAgent
@@ -10,6 +11,13 @@ def main():
     print("[*] Initializing SecureStrand AI (Swarm Phase 1 Ensembles)...")
     
     target_file = "target_app_code.txt"
+    
+    # CRITICAL GUARD: Verify target file exists before spinning up the swarm
+    if not os.path.exists(target_file):
+        print(f"\n[!] CRITICAL ERROR: Target code artifact missing: '{target_file}'")
+        print("[*] Troubleshooting: Please ensure the target file exists in the root directory.")
+        print("[*] Execution halted safely.\n")
+        sys.exit(1)
     
     # 1. Run Ingestion Engine
     extracted_data = DecompilerSageA01.extract_features_from_file(target_file)
@@ -43,7 +51,7 @@ def main():
     print(json.dumps(composite_report, indent=2))
     print("============================================================")
     
-    # 5. Automated File Exporter (Fixed json.dump line)
+    # 5. Automated File Exporter
     reports_dir = "reports"
     if not os.path.exists(reports_dir):
         os.makedirs(reports_dir)
