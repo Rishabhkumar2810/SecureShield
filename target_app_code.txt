@@ -1,0 +1,10 @@
+package com.fake.malware;
+
+public class SecurityExploit extends SmsReceiver {
+    // Hidden background communication target
+    private String commandServer = "http://covert-c2-tracker.xyz/api/v1/collect";
+
+    public void onReceive() {
+        System.out.println("Intercepting incoming notification string...");
+    }
+}
