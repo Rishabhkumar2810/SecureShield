@@ -15,22 +15,35 @@ class DecompilerSageA01:
             print(f"[!] Target file not found: {file_path}")
             return {"api_calls": [], "extracted_urls": []}
             
-        # Standard regex pattern to find embedded web endpoints
+        # Regex to find standard web links
         url_pattern = re.compile(r'https?://[^\s"\']+')
+        # Regex to flag direct unverified IP communication (e.g., http://192.168.1.1:8080)
+        ip_pattern = re.compile(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}[:/\s"\']?')
         
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 for line in f:
-                    # Scan for potential network targets
-                    urls = url_pattern.findall(line)
-                    if urls:
-                        extracted_urls.extend(urls)
+                    # Scan for standard links or direct IPs
+                    if ip_pattern.search(line):
+                        ips = ip_pattern.findall(line)
+                        extracted_urls.extend([ip.strip('"\'' ) for ip in ips])
+                    else:
+                        urls = url_pattern.findall(line)
+                        if urls:
+                            extracted_urls.extend(urls)
                         
-                    # Scan for potential G1 semantic keywords or banking logic
-                    if "SmsReceiver" in line or "onReceive" in line:
+                    # --- G1 Semantic Rule Expansion ---
+                    # 1. Catch SMS Interception patterns
+                    if any(x in line for x in ["SmsReceiver", "onReceive", "SMS_RECEIVED"]):
                         extracted_apis.append("com.secure.banking.SmsReceiver.onReceive")
-                    if "accessibility" in line.lower():
-                        extracted_apis.append("android.accessibilityservice")
+                    
+                    # 2. Catch Accessibility Service Abuse (Common in Banking Trojans for overlays)
+                    if any(x in line.lower() for x in ["accessibilityservice", "accessibility_service", "onaccessibilityevent"]):
+                        extracted_apis.append("android.accessibilityservice.AccessibilityService")
+                        
+                    # 3. Catch Device Administrator / Installation manipulation attempts
+                    if any(x in line for x in ["DEVICE_ADMIN_ENABLED", "requestRole", "ACTION_MANAGE_OVERLAYS"]):
+                        extracted_apis.append("android.app.role.RoleManager")
                         
         except Exception as e:
             print(f"[!] Error processing file: {str(e)}")
