@@ -5,36 +5,28 @@ class RiskComposerA11:
     
     @staticmethod
     def calculate_phantom_score(g1_payload: dict, g4_payload: dict) -> dict:
-        # Base Raw Risk Inputs normalized from the individual agents (0.0 to 1.0)
         g1_raw = g1_payload.get("score", 0) / 100.0
         g4_raw = g4_payload.get("score", 0) / 100.0
         
-        # 1. Evaluate G1 Semantic Opcode Strand (Base Weight: 20%, Max Contribution: 28 pts)
+        # G1 Evaluation logic & Banking Boost
         g1_weight = 0.20
-        # Check raw features for high-risk banking API patterns
         api_calls = g1_payload.get("raw_features", {}).get("api_calls", [])
-        if any("com.secure.banking" in api for api in api_calls):
-            g1_weight += 0.08  # Apply Banking Boost (+8%)
-            
+        has_g1_boost = any("com.secure.banking" in api or "AccessibilityService" in api for api in api_calls)
+        if has_g1_boost:
+            g1_weight += 0.08
         g1_contribution = min(g1_raw * g1_weight * 100, 28)
         
-        # 2. Evaluate G4 Network Behavior Helix (Base Weight: 18%, Max Contribution: 23 pts)
+        # G4 Evaluation logic & Banking Boost
         g4_weight = 0.18
-        # Check raw features for active cleartext endpoints
         urls = g4_payload.get("raw_features", {}).get("extracted_urls", [])
         if len(urls) > 0:
-            g4_weight += 0.05  # Apply Banking Boost (+5%)
-            
+            g4_weight += 0.05
         g4_contribution = min(g4_raw * g4_weight * 100, 23)
         
-        # Phase 1 Aggregation Strategy (Scaled to a clean 0-100 score for current active strands)
+        # Scaling math
         current_max_possible = 28 + 23
-        raw_combined = g1_contribution + g4_contribution
+        phantom_score = int(((g1_contribution + g4_contribution) / current_max_possible) * 100)
         
-        # Final scaled mathematical calculation
-        phantom_score = int((raw_combined / current_max_possible) * 100)
-        
-        # Determine enterprise threat level classification
         if phantom_score >= 75:
             threat_band = "CRITICAL THREAT"
         elif phantom_score >= 40:
@@ -42,9 +34,17 @@ class RiskComposerA11:
         else:
             threat_band = "LOW RISK"
             
+        # Assemble Explainability Traces
+        narrative_summary = []
+        if g1_contribution > 0:
+            narrative_summary.append(g1_payload.get("reasoning_trace"))
+        if g4_contribution > 0:
+            narrative_summary.append(g4_payload.get("reasoning_trace"))
+            
         return {
             "phantom_score": f"{phantom_score}/100",
             "threat_band": threat_band,
+            "forensic_narrative": " | ".join(narrative_summary) if narrative_summary else "Application exhibits standard clean operational telemetry.",
             "metrics_evaluated": {
                 "g1_semantic_points": round(g1_contribution, 2),
                 "g4_network_points": round(g4_contribution, 2)
