@@ -1,0 +1,9 @@
+{
+    "phantom_score": "95/100",
+    "threat_band": "CRITICAL THREAT",
+    "forensic_narrative": "Flagged persistent application execution intent tracking 3 critical security hooks (Accessibility Service monitoring/SMS intercepts). | Identified 2 suspicious remote connection channels including raw unverified IP exfiltration nodes.",
+    "metrics_evaluated": {
+        "g1_semantic_points": 28,
+        "g4_network_points": 20.7
+    }
+}
